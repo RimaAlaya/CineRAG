@@ -1,0 +1,25 @@
+{
+  "title": "Stranger Things",
+  "chunks": [
+    {
+      "type": "trivia",
+      "text": "1. The series is heavily inspired by 1980s pop culture, including Spielberg and Stephen King.\n2. Eleven’s shaved head was required for authenticity in early episodes.\n3. The Upside Down is a parallel dimension created using practical and CGI effects."
+    },
+    {
+      "type": "characters",
+      "text": "Eleven: girl with telekinetic powers, escapes government experiments.\nMike Wheeler: loyal friend, helps Eleven navigate the real world.\nJim Hopper: police chief, protective figure in Hawkins.\nJoyce Byers: mother of Will, persistent and determined.\nDustin Henderson, Lucas Sinclair, Will Byers: friends, part of the central group fighting supernatural threats."
+    },
+    {
+      "type": "themes",
+      "text": "Friendship, supernatural adventure, government conspiracies, coming-of-age, courage."
+    },
+    {
+      "type": "plot",
+      "text": "In Hawkins, Indiana, a young boy goes missing, uncovering a secret government experiment and a parallel dimension called the Upside Down. A group of friends, along with a mysterious girl named Eleven, fight supernatural forces to save their town."
+    },
+    {
+      "type": "ratings",
+      "text": "IMDb: 8.7/10, Rotten Tomatoes: 93%, Emmy wins: 6"
+    }
+  ]
+}

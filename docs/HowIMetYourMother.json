@@ -1,0 +1,25 @@
+{
+  "title": "How I Met Your Mother",
+  "chunks": [
+    {
+      "type": "trivia",
+      "text": "1. The yellow umbrella is a recurring symbol throughout the series.\n2. Neil Patrick Harris’ character, Barney, was originally intended as a side character.\n3. The show’s finale was highly debated and controversial among fans."
+    },
+    {
+      "type": "characters",
+      "text": "Ted Mosby: hopeless romantic telling his children the story of meeting their mother.\nRobin Scherbatsky: ambitious journalist, Ted’s love interest.\nBarney Stinson: womanizer with complex depth, loves suits.\nMarshall Eriksen: lawyer, Ted’s best friend, married to Lily.\nLily Aldrin: artist, nurturing, Marshall’s wife."
+    },
+    {
+      "type": "themes",
+      "text": "Love and relationships, friendship, fate, humor, and life’s journey."
+    },
+    {
+      "type": "plot",
+      "text": "Ted Mosby recounts to his children how he met their mother, sharing stories about his friendships and romantic adventures over 9 seasons."
+    },
+    {
+      "type": "ratings",
+      "text": "IMDb: 8.3/10, Rotten Tomatoes: 83%, Emmy wins: 10"
+    }
+  ]
+}
