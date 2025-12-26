@@ -1,100 +1,216 @@
-# main.py
 import json
-import os
-from sentence_transformers import SentenceTransformer
 import numpy as np
 import faiss
-from transformers import AutoModelForCausalLM, AutoTokenizer
-import torch
-
-# =========================
-# 1️⃣ Load your JSON files
-# =========================
-DOCS_PATH = 'docs'
-all_chunks = []
-
-for filename in os.listdir(DOCS_PATH):
-    if filename.endswith('.json'):
-        with open(os.path.join(DOCS_PATH, filename), 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            for chunk in data['chunks']:
-                all_chunks.append({
-                    "movie": data['title'],
-                    "type": chunk['type'],
-                    "text": chunk['text']
-                })
-
-print(f"Loaded {len(all_chunks)} chunks from {len(os.listdir(DOCS_PATH))} movies")
-
-# =========================
-# 2️⃣ Create embeddings
-# =========================
-model = SentenceTransformer('all-MiniLM-L6-v2')
-texts = [chunk['text'] for chunk in all_chunks]
-embeddings = model.encode(texts, show_progress_bar=True)
-
-print("Embeddings created!")
-
-# =========================
-# 3️⃣ Store embeddings in FAISS
-# =========================
-dimension = embeddings.shape[1]
-index = faiss.IndexFlatL2(dimension)
-embeddings_np = np.array(embeddings).astype('float32')
-index.add(embeddings_np)
-
-print(f"FAISS index contains {index.ntotal} vectors")
-
-# =========================
-# 4️⃣ Query your system
-# =========================
-def query_system(question, top_k=2):
-    query_emb = model.encode([question]).astype('float32')
-    D, I = index.search(query_emb, k=top_k)
-    results = []
-    for i in I[0]:
-        results.append({
-            "movie": all_chunks[i]['movie'],
-            "type": all_chunks[i]['type'],
-            "text": all_chunks[i]['text']
-        })
-    return results
-
-# Example usage
-question = "Who improvised a line in Inception?"
-results = query_system(question)
-for r in results:
-    print(f"Movie: {r['movie']} | Type: {r['type']}")
-    print(r['text'])
-    print("-----")
-
-# ---- RAG LLM setup (use Mistral 7B instruct for reliable local demo) ----
+from sentence_transformers import SentenceTransformer
+from pathlib import Path
+import pickle
+from typing import List, Dict
+from tqdm import tqdm
 
 
-# Use Mistral 7B instruct (open) instead of gated LLaMA for now
-model_name = "mistralai/mistral-7b-instruct"
+class MovieRAGSystem:
+    """Production-grade RAG system for movie queries"""
 
-print("Loading LLM:", model_name)
-tokenizer = AutoTokenizer.from_pretrained(model_name, use_auth_token=True)
-# use device_map="auto" if you have a GPU; remove it if you want pure CPU (but slower)
-llama_model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    device_map="auto",       # set to "auto" if you have a GPU or accelerate installed
-    torch_dtype=torch.float16,  # float16 for GPU; use float32 for CPU
-    use_auth_token=True
-)
-# ensure model in eval mode
-llama_model.eval()
+    def __init__(self, chunks_file: str = 'data/movie_chunks.json'):
+        """Initialize the RAG system"""
+        self.chunks_file = chunks_file
+        self.chunks = []
+        self.index = None
+        self.embeddings = None
+        self.model = None
 
-def rag_answer(question, top_k=3):
-    retrieved = query_system(question, top_k=top_k)
-    # Build context - keep short so LLM doesn't get confused
-    context = "\n\n".join([f"[{r['movie']} | {r['type']}]\n{r['text']}" for r in retrieved])
-    prompt = f"Use the context to answer the question concisely.\n\nContext:\n{context}\n\nQuestion: {question}\nAnswer:"
-    inputs = tokenizer(prompt, return_tensors="pt").to(llama_model.device)
-    outputs = llama_model.generate(**inputs, max_new_tokens=150, do_sample=False)
-    answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    # Trim repeated prompt if present
-    if "Answer:" in answer:
-        answer = answer.split("Answer:")[-1].strip()
-    return answer
+        print("🎬 Initializing Movie RAG System...")
+        self._load_chunks()
+        self._load_or_create_embeddings()
+        self._build_index()
+        print("✅ RAG System ready!\n")
+
+    def _load_chunks(self):
+        """Load movie chunks from JSON"""
+        print(f"📚 Loading chunks from {self.chunks_file}...")
+        with open(self.chunks_file, 'r', encoding='utf-8') as f:
+            self.chunks = json.load(f)
+        print(f"✅ Loaded {len(self.chunks)} chunks")
+
+    def _load_or_create_embeddings(self):
+        """Load existing embeddings or create new ones"""
+        embeddings_file = 'data/embeddings.npy'
+        model_cache = 'data/model_name.txt'
+
+        # Load embedding model
+        print("🧠 Loading embedding model (all-MiniLM-L6-v2)...")
+        self.model = SentenceTransformer('all-MiniLM-L6-v2')
+        current_model_name = 'all-MiniLM-L6-v2'
+
+        # Check if embeddings already exist
+        if Path(embeddings_file).exists() and Path(model_cache).exists():
+            with open(model_cache, 'r') as f:
+                saved_model_name = f.read().strip()
+
+            if saved_model_name == current_model_name:
+                print("📦 Loading cached embeddings...")
+                self.embeddings = np.load(embeddings_file)
+                print(f"✅ Loaded embeddings: {self.embeddings.shape}")
+                return
+
+        # Create new embeddings
+        print("🔄 Creating embeddings (this takes 1-2 minutes)...")
+        texts = [chunk['text'] for chunk in self.chunks]
+
+        # Create embeddings with progress bar
+        self.embeddings = self.model.encode(
+            texts,
+            show_progress_bar=True,
+            batch_size=32
+        )
+
+        # Save embeddings
+        print("💾 Saving embeddings for future use...")
+        np.save(embeddings_file, self.embeddings)
+        with open(model_cache, 'w') as f:
+            f.write(current_model_name)
+
+        print(f"✅ Created embeddings: {self.embeddings.shape}")
+
+    def _build_index(self):
+        """Build FAISS index for fast similarity search"""
+        print("🔨 Building FAISS index...")
+
+        # Get embedding dimension
+        dimension = self.embeddings.shape[1]
+
+        # Create index (L2 distance)
+        self.index = faiss.IndexFlatL2(dimension)
+
+        # Add embeddings to index
+        embeddings_np = self.embeddings.astype('float32')
+        self.index.add(embeddings_np)
+
+        print(f"✅ FAISS index built: {self.index.ntotal} vectors")
+
+    def search(self, query: str, top_k: int = 5) -> List[Dict]:
+        """
+        Search for relevant chunks
+
+        Args:
+            query: Search query string
+            top_k: Number of results to return
+
+        Returns:
+            List of dicts with chunk info and relevance scores
+        """
+        # Encode query
+        query_embedding = self.model.encode([query]).astype('float32')
+
+        # Search index
+        distances, indices = self.index.search(query_embedding, k=top_k)
+
+        # Prepare results
+        results = []
+        for idx, distance in zip(indices[0], distances[0]):
+            chunk = self.chunks[idx]
+            results.append({
+                'movie_title': chunk['movie_title'],
+                'chunk_type': chunk['chunk_type'],
+                'text': chunk['text'],
+                'metadata': chunk['metadata'],
+                'relevance_score': float(distance),  # Lower is better (L2 distance)
+                'chunk_id': int(idx)
+            })
+
+        return results
+
+    def get_statistics(self) -> Dict:
+        """Get system statistics"""
+        chunk_types = {}
+        movies = set()
+
+        for chunk in self.chunks:
+            chunk_types[chunk['chunk_type']] = chunk_types.get(chunk['chunk_type'], 0) + 1
+            movies.add(chunk['movie_title'])
+
+        return {
+            'total_chunks': len(self.chunks),
+            'total_movies': len(movies),
+            'chunk_types': chunk_types,
+            'embedding_dimension': self.embeddings.shape[1],
+            'index_size': self.index.ntotal
+        }
+
+
+def test_system():
+    """Test the RAG system with sample queries"""
+    print("\n" + "=" * 80)
+    print("🧪 Testing RAG System")
+    print("=" * 80)
+
+    # Initialize system
+    rag = MovieRAGSystem()
+
+    # Print statistics
+    stats = rag.get_statistics()
+    print("\n📊 System Statistics:")
+    print(f"   Total chunks: {stats['total_chunks']}")
+    print(f"   Total movies: {stats['total_movies']}")
+    print(f"   Embedding dimension: {stats['embedding_dimension']}")
+    print(f"\n   Chunk types:")
+    for chunk_type, count in stats['chunk_types'].items():
+        print(f"      {chunk_type}: {count}")
+
+    # Test queries
+    test_queries = [
+        "Who directed Inception?",
+        "What is The Matrix about?",
+        "Who stars in Titanic?",
+        "Best rated action movies",
+    ]
+
+    print("\n" + "=" * 80)
+    print("🔍 Test Queries")
+    print("=" * 80)
+
+    for query in test_queries:
+        print(f"\n❓ Query: '{query}'")
+        print("-" * 80)
+
+        results = rag.search(query, top_k=3)
+
+        for i, result in enumerate(results, 1):
+            print(f"\n   Result {i}: {result['movie_title']} [{result['chunk_type']}]")
+            print(f"   Score: {result['relevance_score']:.4f}")
+            print(f"   Text: {result['text'][:150]}...")
+
+    print("\n" + "=" * 80)
+    print("✅ Testing complete!")
+    print("=" * 80)
+
+    return rag
+
+
+if __name__ == "__main__":
+    # Run tests
+    rag_system = test_system()
+
+    # Interactive mode
+    print("\n" + "=" * 80)
+    print("💬 Interactive Mode (type 'quit' to exit)")
+    print("=" * 80)
+
+    while True:
+        query = input("\n🎬 Your question: ").strip()
+
+        if query.lower() in ['quit', 'exit', 'q']:
+            print("👋 Goodbye!")
+            break
+
+        if not query:
+            continue
+
+        results = rag_system.search(query, top_k=3)
+
+        print("\n📋 Results:")
+        print("-" * 80)
+        for i, result in enumerate(results, 1):
+            print(f"\n{i}. {result['movie_title']} [{result['chunk_type']}]")
+            print(f"   {result['text']}")
+            print(f"   (Score: {result['relevance_score']:.4f})")
