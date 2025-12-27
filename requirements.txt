@@ -13,4 +13,4 @@ langchain==0.1.0
 langchain-groq==0.0.1
 groq==0.4.1
 numpy>=1.25,<2.0
-huggingface-hub>=1.0.0
+huggingface-hub==0.13.4
