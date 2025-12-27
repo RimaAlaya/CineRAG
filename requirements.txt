@@ -2,7 +2,7 @@ streamlit==1.29.0
 sentence-transformers==2.2.2
 faiss-cpu==1.13.2
 transformers==4.36.0
-torch==2.1.0
+torch==2.0.1
 numpy==1.24.3
 rank-bm25==0.2.2
 plotly==5.18.0
