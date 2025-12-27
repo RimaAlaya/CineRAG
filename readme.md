@@ -1,3 +1,15 @@
+---
+title: CineRAG
+emoji: "🎬"
+colorFrom: "purple"
+colorTo: "pink"
+sdk: streamlit
+sdk_version: "1.29.0"
+app_file: app.py
+pinned: false
+---
+
+
 # 🎬 CineRAG - Cinema Secrets Encyclopedia
 
 **Beyond IMDB: A RAG system for true cinema lovers with behind-the-scenes secrets, production trivia, and insider stories.**
