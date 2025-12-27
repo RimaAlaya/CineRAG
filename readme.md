@@ -10,7 +10,7 @@ pinned: false
 ---
 
 
-# 🎬 CineRAG - Cinema Secrets Encyclopedia
+# 🎬CineRAG - Cinema Secrets Encyclopedia
 
 **Beyond IMDB: A RAG system for true cinema lovers with behind-the-scenes secrets, production trivia, and insider stories.**
 
