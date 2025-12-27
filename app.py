@@ -1,292 +1,225 @@
+# app.py
 """
-CineRAG - Production Streamlit App
-Showcases hybrid search with performance metrics
+CineRAG - Cinema Secrets Edition
+Production Streamlit App with behind-the-scenes content
 """
 
 import streamlit as st
 import json
-from hybrid_rag import HybridMovieRAG
+from cinema_secrets_rag import CinemaSecretsRAG
 import plotly.graph_objects as go
-import plotly.express as px
 
 # Page config
 st.set_page_config(
-    page_title="CineRAG - Movie Search System",
+    page_title="CineRAG - Cinema Secrets",
     page_icon="🎬",
     layout="wide"
 )
 
+# Custom CSS
+st.markdown("""
+<style>
+    .secret-badge {
+        background-color: #ff6b6b;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    .movie-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #4ECDC4;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # Initialize system (cached)
 @st.cache_resource
 def load_rag_system():
-    return HybridMovieRAG()
+    return CinemaSecretsRAG()
 
-
-@st.cache_data
-def load_comparison_data():
-    with open('data/comparison_report.json', 'r') as f:
-        return json.load(f)
-
-
-# Load systems
 rag = load_rag_system()
-comparison_data = load_comparison_data()
 
-# Title and description
-st.title("🎬 CineRAG - Hybrid Movie Search System")
+# Title
+st.title("🎬 CineRAG - Cinema Secrets Encyclopedia")
 st.markdown("""
-Advanced RAG system combining **semantic search** and **keyword matching** (BM25) 
-for accurate movie information retrieval across 466+ movies.
+**Beyond IMDB**: Get director info, plot summaries, AND behind-the-scenes secrets, 
+production stories, and insider trivia that true cinema fans obsess over.
 """)
 
-# Sidebar - System Info
+# Sidebar - Stats
 with st.sidebar:
     st.header("📊 System Stats")
     stats = rag.get_statistics()
-    st.metric("Total Movies", stats['total_movies'])
-    st.metric("Total Chunks", stats['total_chunks'])
-    st.metric("Embedding Dim", stats['embedding_dimension'])
-
-    st.divider()
-
-    st.header("🎯 Performance")
-    hybrid_perf = comparison_data['hybrid']['overall']
 
     col1, col2 = st.columns(2)
     with col1:
-        st.metric("Recall@3", f"{hybrid_perf['recall@3']:.1%}")
+        st.metric("Movies", stats['total_movies'])
+        st.metric("Total Chunks", stats['total_chunks'])
     with col2:
-        st.metric("Recall@5", f"{hybrid_perf['recall@5']:.1%}")
+        st.metric("🎬 Secrets", stats['secret_chunks'])
+        st.metric("LLM", "✅ Groq" if stats['has_llm'] else "❌")
 
-    st.metric("MRR", f"{hybrid_perf['mrr']:.3f}")
-    st.metric("Avg Latency", f"{hybrid_perf['avg_latency_ms']:.0f}ms")
-
-# Main content tabs
-tab1, tab2, tab3 = st.tabs(["🔍 Search", "📊 Performance", "ℹ️ About"])
-
-# Tab 1: Search Interface
-with tab1:
-    st.header("Search Movies")
-
-    # Search method selector
-    search_method = st.radio(
-        "Search Method:",
-        ["Hybrid (Best)", "Semantic Only", "BM25 Only"],
-        horizontal=True
-    )
-
-    method_map = {
-        "Hybrid (Best)": "hybrid",
-        "Semantic Only": "semantic",
-        "BM25 Only": "bm25"
-    }
-
-    # Search input
-    query = st.text_input(
-        "Ask anything about movies:",
-        placeholder="e.g., Who directed Inception? or Leonardo DiCaprio movies"
-    )
-
-    # Number of results
-    top_k = st.slider("Number of results:", 1, 10, 5)
-
-    if query:
-        with st.spinner("Searching..."):
-            results = rag.search(query, top_k=top_k, method=method_map[search_method])
-
-        st.success(f"Found {len(results)} results in {results[0].get('relevance_score', 0):.3f}s")
-
-        # Display results
-        for i, result in enumerate(results, 1):
-            with st.expander(f"**{i}. {result['movie_title']}** [{result['chunk_type']}]", expanded=(i <= 3)):
-                st.write(result['text'])
-
-                # Show scores for hybrid
-                if method_map[search_method] == 'hybrid':
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("Final Score", f"{result['relevance_score']:.3f}")
-                    with col2:
-                        st.metric("Semantic", f"{result['semantic_contribution']:.3f}")
-                    with col3:
-                        st.metric("BM25", f"{result['bm25_contribution']:.3f}")
-                else:
-                    st.metric("Relevance Score", f"{result['relevance_score']:.3f}")
-
-                # Metadata
-                if result['metadata']:
-                    st.caption(
-                        f"📅 {result['metadata'].get('year', 'N/A')} | ⭐ {result['metadata'].get('rating', 'N/A')}")
-
-    # Example queries
     st.divider()
-    st.subheader("💡 Try these examples:")
 
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.markdown("**Factual:**")
-        st.markdown("- Who directed Inception?")
-        st.markdown("- Who stars in Titanic?")
-        st.markdown("- What year was The Matrix released?")
-
-    with col2:
-        st.markdown("**Descriptive:**")
-        st.markdown("- What is Inception about?")
-        st.markdown("- Describe The Matrix")
-        st.markdown("- What happens in Titanic?")
-
-    with col3:
-        st.markdown("**Cross-Reference:**")
-        st.markdown("- Leonardo DiCaprio movies")
-        st.markdown("- Christopher Nolan films")
-        st.markdown("- Tom Hanks movies")
-
-# Tab 2: Performance Metrics
-with tab2:
-    st.header("Performance Analysis")
-
+    st.header("🎯 Features")
     st.markdown("""
-    Evaluated on **164 test questions** across multiple categories and difficulty levels.
+    - **Hybrid Search** (BM25 + Semantic)
+    - **Behind-the-Scenes Secrets**
+    - **AI-Powered Answers** (Groq)
+    - **252 Movies with Secrets**
     """)
 
-    # Overall comparison
-    st.subheader("📈 Overall Performance: Baseline vs Hybrid")
+# Main content
+tab1, tab2, tab3 = st.tabs(["🔍 Ask Questions", "💡 Examples", "ℹ️ About"])
 
-    baseline = comparison_data['baseline']['overall']
-    hybrid = comparison_data['hybrid']['overall']
+# Tab 1: Main search
+with tab1:
+    st.header("Ask Me Anything About Movies")
 
-    # Create comparison chart
-    metrics = ['recall@1', 'recall@3', 'recall@5', 'mrr']
-    baseline_vals = [baseline[m] * 100 for m in metrics]
-    hybrid_vals = [hybrid[m] * 100 for m in metrics]
+    # Search mode
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        query = st.text_input(
+            "Your question:",
+            placeholder="e.g., What secrets are there about The Dark Knight?"
+        )
+    with col2:
+        use_llm = st.checkbox("Use AI Answer", value=True)
 
-    fig = go.Figure(data=[
-        go.Bar(name='Baseline (Semantic Only)', x=metrics, y=baseline_vals, marker_color='#FF6B6B'),
-        go.Bar(name='Hybrid (BM25 + Semantic)', x=metrics, y=hybrid_vals, marker_color='#4ECDC4')
-    ])
+    if query:
+        with st.spinner("Searching cinema knowledge..."):
+            result = rag.ask(query, top_k=5, use_llm=use_llm)
 
-    fig.update_layout(
-        barmode='group',
-        yaxis_title='Score (%)',
-        xaxis_title='Metric',
-        height=400,
-        hovermode='x unified'
-    )
+        # Show answer
+        st.markdown("### 💬 Answer")
+        st.info(result['answer'])
 
-    st.plotly_chart(fig, use_container_width=True)
+        # Show if secrets were found
+        if result['has_secrets']:
+            st.success("🎬 This answer includes behind-the-scenes secrets!")
 
-    # Key improvements
-    col1, col2, col3 = st.columns(3)
+        st.divider()
 
-    improvements = comparison_data['improvements']
+        # Show sources
+        st.markdown("### 📚 Sources")
+
+        for i, source in enumerate(result['sources'], 1):
+            with st.expander(
+                f"**{i}. {source['movie_title']}** [{source['chunk_type']}] "
+                + ("🎬 SECRET" if source['is_secret'] else ""),
+                expanded=(i <= 2)
+            ):
+                st.write(source['text'])
+                st.caption(f"Relevance: {source['relevance_score']:.3f}")
+
+# Tab 2: Examples
+with tab2:
+    st.header("💡 Try These Queries")
+
+    col1, col2 = st.columns(2)
 
     with col1:
-        recall_imp = improvements['overall_recall@3'] * 100
-        st.metric(
-            "Recall@3 Improvement",
-            f"{hybrid['recall@3']:.1%}",
-            f"{recall_imp:+.1f}%"
-        )
+        st.markdown("### 🎯 Basic Questions")
+        basic_queries = [
+            "Who directed Inception?",
+            "Who stars in Titanic?",
+            "What is The Matrix about?",
+            "Leonardo DiCaprio movies"
+        ]
+
+        for q in basic_queries:
+            if st.button(q, key=f"basic_{q}"):
+                st.session_state.example_query = q
+
+        st.markdown("### 🎬 Cinema Secrets")
+        secret_queries = [
+            "What secrets are there about Inception?",
+            "Behind the scenes of The Dark Knight",
+            "Tell me trivia about Titanic",
+            "Production stories from The Matrix"
+        ]
+
+        for q in secret_queries:
+            if st.button(q, key=f"secret_{q}"):
+                st.session_state.example_query = q
 
     with col2:
-        st.metric(
-            "Recall@5",
-            f"{hybrid['recall@5']:.1%}",
-            f"{(hybrid['recall@5'] - baseline['recall@5']) * 100:+.1f}%"
-        )
+        if 'example_query' in st.session_state:
+            st.markdown(f"### Testing: *{st.session_state.example_query}*")
 
-    with col3:
-        st.metric(
-            "Hit@3",
-            f"{hybrid['hit@3']:.1%}",
-            f"{(hybrid['hit@3'] - baseline['hit@3']) * 100:+.1f}%"
-        )
+            with st.spinner("Searching..."):
+                result = rag.ask(st.session_state.example_query, top_k=3, use_llm=True)
 
-    # By category
-    st.subheader("📋 Performance by Question Category")
+            st.markdown("**Answer:**")
+            st.write(result['answer'])
 
-    baseline_cat = comparison_data['baseline']['by_category']
-    hybrid_cat = comparison_data['hybrid']['by_category']
-
-    categories = list(baseline_cat.keys())
-    baseline_cat_vals = [baseline_cat[c]['recall@3'] * 100 for c in categories]
-    hybrid_cat_vals = [hybrid_cat[c]['recall@3'] * 100 for c in categories]
-
-    fig2 = go.Figure(data=[
-        go.Bar(name='Baseline', x=categories, y=baseline_cat_vals, marker_color='#FF6B6B'),
-        go.Bar(name='Hybrid', x=categories, y=hybrid_cat_vals, marker_color='#4ECDC4')
-    ])
-
-    fig2.update_layout(
-        barmode='group',
-        yaxis_title='Recall@3 (%)',
-        xaxis_title='Category',
-        height=400
-    )
-
-    st.plotly_chart(fig2, use_container_width=True)
-
-    # Highlight biggest improvement
-    st.success("🎯 **Biggest Improvement:** Cross-reference queries (6.2% → 71.0%, +64.8%)")
-    st.info("💡 **Why?** BM25 excels at exact keyword matching (actor/director names)")
+            st.markdown("**Top Source:**")
+            if result['sources']:
+                source = result['sources'][0]
+                st.write(f"**{source['movie_title']}** [{source['chunk_type']}]")
+                st.caption(source['text'][:200] + "...")
 
 # Tab 3: About
 with tab3:
     st.header("About CineRAG")
 
-    st.markdown("""
-    ### 🎯 System Overview
+    col1, col2 = st.columns(2)
 
-    CineRAG is an advanced Retrieval-Augmented Generation (RAG) system designed for 
-    movie information retrieval. It combines multiple search techniques to provide 
-    accurate answers to diverse movie-related queries.
+    with col1:
+        st.markdown("""
+        ### 🎯 What is This?
+        
+        **CineRAG** is a RAG system for true cinema lovers. While other movie 
+        databases give you basic info (director, cast, plot), CineRAG reveals 
+        the secrets that fans obsess over:
+        
+        - 🎬 Behind-the-scenes production stories
+        - 🎭 Casting decisions and actor preparation
+        - 🎥 Filming techniques and challenges
+        - 📺 Reception, controversies, and legacy
+        
+        ### 🏗️ How It Works
+        
+        1. **Hybrid Search**: Combines semantic similarity (understanding meaning) 
+           with keyword matching (exact phrases)
+        2. **Multi-Source Data**: TMDB for basic info + Wikipedia for secrets
+        3. **AI Generation**: Groq's Mixtral model formats answers naturally
+        4. **Smart Chunking**: Separates plot, cast, crew, and secrets
+        """)
 
-    ### 🏗️ Architecture
-
-    **Data Pipeline:**
-    1. **Data Collection:** TMDB API (500+ movies)
-    2. **Chunking:** Smart content segmentation (plot, cast, crew, metadata)
-    3. **Indexing:** 
-       - Semantic: all-MiniLM-L6-v2 embeddings + FAISS
-       - Keyword: BM25 with Okapi scoring
-
-    **Search Strategy:**
-    - Retrieves top 20 candidates from each method
-    - Normalizes and combines scores (50/50 weight)
-    - Returns top K most relevant chunks
-
-    ### 📊 Dataset
-    - **Movies:** 466 films
-    - **Chunks:** 1,982 searchable segments
-    - **Test Questions:** 164 with ground truth labels
-
-    ### 🔧 Technologies
-    - **Embeddings:** sentence-transformers
-    - **Vector DB:** FAISS
-    - **Keyword Search:** rank-bm25
-    - **Web Framework:** Streamlit
-    - **Evaluation:** Custom metrics system
-
-    ### 📈 Key Results
-    - Overall Recall@3: **85.7%** (↑4.3% from baseline)
-    - Cross-reference queries: **71.0%** (↑64.8% from baseline)
-    - Average latency: **21ms** per query
-
-    ### 🚀 Future Improvements
-    - [ ] Cross-encoder reranking
-    - [ ] Query classification for better routing
-    - [ ] Metadata filtering for genre/year queries
-    - [ ] Conversation memory
-    - [ ] Multi-modal search (posters, images)
-
-    ### 👨‍💻 Built by
-    **[Rima ALAYA]** - AI/ML Engineer
-
-    [GitHub](https://github.com/RimaAlaya/cinerag) | [LinkedIn](https://linkedin.com/in/rima-alaya)
-    """)
+    with col2:
+        st.markdown("""
+        ### 📊 Technical Details
+        
+        **Data:**
+        - 466 movies from TMDB
+        - 252 movies with behind-the-scenes secrets
+        - 3,000+ searchable chunks
+        
+        **Tech Stack:**
+        - **Vector Search**: FAISS + sentence-transformers
+        - **Keyword Search**: BM25 (Okapi)
+        - **LLM**: Groq (Mixtral-8x7b)
+        - **Framework**: LangChain
+        - **UI**: Streamlit
+        
+        **Performance:**
+        - Average query time: <1 second
+        - Hybrid search accuracy: 85.7% Recall@3
+        - 64.8% improvement on cross-reference queries
+        
+        ### 🚀 Built By
+        
+        **Rima Alaya** - AI/ML Engineer
+        
+        [GitHub](https://github.com/RimaAlaya) | [LinkedIn](https://linkedin.com/in/rima-alaya)
+        
+        *Made with passion for cinema and technology* 🎬
+        """)
 
 # Footer
 st.divider()
-st.caption("🎬 CineRAG v2.0 - Hybrid Search System | Data from TMDB")
+st.caption("🎬 CineRAG v2.0 - Cinema Secrets Edition | Data: TMDB + Wikipedia")
