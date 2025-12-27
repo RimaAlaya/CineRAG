@@ -2,9 +2,5 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/CineRAG" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/CineRAG/CineRAG" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/CineRAG/CineRAG/CineRAG" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/CineRAG/CineRAG/CineRAG/CineRAG" vcs="Git" />
   </component>
 </project>
