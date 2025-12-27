@@ -1,5 +1,6 @@
 streamlit==1.29.0
 sentence-transformers==2.2.2
+torch==2.9.1
 faiss-cpu==1.13.2
 transformers==4.36.0
 rank-bm25==0.2.2
@@ -11,6 +12,5 @@ beautifulsoup4==4.12.2
 langchain==0.1.0
 langchain-groq==0.0.1
 groq==0.4.1
-numpy>=1.25
-torch>=2.5.0
-faiss-cpu==1.13.2
+numpy>=1.25,<2.0
+huggingface-hub>=1.0.0
