@@ -124,7 +124,7 @@ class CinemaSecretsRAG:
                 model_name="llama-3.3-70b-versatile",  # Fast and smart
                 groq_api_key=api_key
             )
-            print("✅ Groq LLM initialized (Mixtral-8x7b)")
+            print("✅ Groq LLM initialized (llama-3.3-70b-versatile)")
         except Exception as e:
             print(f"⚠️  Could not initialize Groq: {e}")
             self.llm = None
