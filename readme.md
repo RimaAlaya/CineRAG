@@ -1,14 +1,12 @@
----
+
 title: CineRAG
-emoji: "🎬"
-colorFrom: "purple"
-colorTo: "pink"
+emoji: 🎬
+colorFrom: purple
+colorTo: pink
 sdk: streamlit
-sdk_version: "1.29.0"
+sdk_version: "1.32.0"
 app_file: app.py
 pinned: false
----
-
 
 # 🎬CineRAG - Cinema Secrets Encyclopedia
 
