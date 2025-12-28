@@ -28,7 +28,6 @@ st.markdown("""
             repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(139, 0, 0, 0.03) 35px, rgba(139, 0, 0, 0.03) 70px),
             url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l5 10h10l-8 8 3 10-10-5-10 5 3-10-8-8h10z' fill='%238b0000' fill-opacity='0.03'/%3E%3C/svg%3E");
     }
-
     /* Gossip column header */
     .gossip-header {
         background: linear-gradient(135deg, #8b0000 0%, #dc143c 100%);
@@ -38,7 +37,6 @@ st.markdown("""
         box-shadow: 0 10px 40px rgba(220, 20, 60, 0.3);
         border: 3px solid #ff1744;
     }
-
     .gossip-title {
         font-size: 3.5rem;
         font-weight: 900;
@@ -47,7 +45,6 @@ st.markdown("""
         text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
         letter-spacing: 3px;
     }
-
     .gossip-subtitle {
         text-align: center;
         font-size: 1.3rem;
@@ -55,13 +52,11 @@ st.markdown("""
         margin-top: 10px;
         font-style: italic;
     }
-
     /* Sidebar stats - vertical */
     [data-testid="stSidebar"] {
         background: linear-gradient(180deg, #1a0000 0%, #2d0000 100%);
         border-right: 3px solid #8b0000;
     }
-
     .stat-box-vertical {
         background: linear-gradient(135deg, rgba(139, 0, 0, 0.3), rgba(220, 20, 60, 0.2));
         border: 2px solid #8b0000;
@@ -71,19 +66,16 @@ st.markdown("""
         text-align: center;
         box-shadow: 0 5px 15px rgba(220, 20, 60, 0.2);
     }
-
     .stat-emoji {
         font-size: 2.5rem;
         margin-bottom: 10px;
     }
-
     .stat-number {
         font-size: 2.5rem;
         font-weight: 900;
         color: #ff1744;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
     }
-
     .stat-label {
         font-size: 0.95rem;
         color: #ffd700;
@@ -91,7 +83,6 @@ st.markdown("""
         letter-spacing: 2px;
         margin-top: 8px;
     }
-
     /* Chat-style query box */
     .query-container {
         background: rgba(220, 20, 60, 0.1);
@@ -100,7 +91,6 @@ st.markdown("""
         padding: 25px;
         margin: 30px 0;
     }
-
     .stTextInput > div > div > input {
         background: rgba(0, 0, 0, 0.6);
         border: 2px solid #ff1744;
@@ -110,12 +100,10 @@ st.markdown("""
         color: white;
         box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
     }
-
     .stTextInput > div > div > input:focus {
         border-color: #ffd700;
         box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
     }
-
     /* Post button - Twitter style */
     .stButton > button {
         background: linear-gradient(90deg, #ff1744, #f50057);
@@ -130,12 +118,10 @@ st.markdown("""
         box-shadow: 0 5px 20px rgba(255, 23, 68, 0.5);
         transition: all 0.3s;
     }
-
     .stButton > button:hover {
         transform: translateY(-3px);
         box-shadow: 0 8px 30px rgba(255, 23, 68, 0.7);
     }
-
     /* Answer - Gossip card style */
     .gossip-answer {
         background: linear-gradient(135deg, rgba(139, 0, 0, 0.4), rgba(220, 20, 60, 0.2));
@@ -146,18 +132,15 @@ st.markdown("""
         box-shadow: 0 8px 25px rgba(220, 20, 60, 0.3);
         border: 1px solid #8b0000;
     }
-
     .tea-emoji {
         font-size: 2rem;
         margin-right: 10px;
         animation: steam 2s infinite;
     }
-
     @keyframes steam {
         0%, 100% { transform: translateY(0px); }
         50% { transform: translateY(-5px); }
     }
-
     /* Secret badge - EXTRA */
     .secret-pill {
         background: linear-gradient(90deg, #ff1744, #ffd700);
@@ -171,12 +154,10 @@ st.markdown("""
         box-shadow: 0 3px 10px rgba(255, 215, 0, 0.4);
         animation: glow 2s infinite;
     }
-
     @keyframes glow {
         0%, 100% { box-shadow: 0 3px 10px rgba(255, 215, 0, 0.4); }
         50% { box-shadow: 0 5px 20px rgba(255, 215, 0, 0.8); }
     }
-
     /* Sources - Cards */
     .source-gossip-card {
         background: rgba(0, 0, 0, 0.4);
@@ -186,19 +167,16 @@ st.markdown("""
         margin: 15px 0;
         transition: all 0.3s;
     }
-
     .source-gossip-card:hover {
         border-color: #ff1744;
         transform: translateX(5px);
         box-shadow: 0 5px 20px rgba(255, 23, 68, 0.3);
     }
-
     /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
         gap: 15px;
         background: transparent;
     }
-
     .stTabs [data-baseweb="tab"] {
         background: rgba(139, 0, 0, 0.3);
         border: 2px solid #8b0000;
@@ -207,19 +185,16 @@ st.markdown("""
         padding: 12px 25px;
         font-weight: 600;
     }
-
     .stTabs [aria-selected="true"] {
         background: linear-gradient(90deg, #ff1744, #f50057);
         border-color: #ff1744;
     }
-
     /* Feedback - Twitter style */
     .feedback-row {
         display: flex;
         gap: 15px;
         margin: 20px 0;
     }
-
     /* Metrics plots */
     .plot-container {
         background: rgba(0, 0, 0, 0.4);
@@ -460,13 +435,11 @@ with tab3:
     with col1:
         st.markdown("""
         **🍿 What's This?**
-
         Your gossip source for cinema secrets:
         - 🎬 Behind-the-scenes drama
         - 🤫 Production secrets
         - 💰 Budget controversies  
         - 🎭 Casting tea
-
         **🔧 Tech:**
         - Hybrid Search (BM25 + Semantic)
         - Groq AI (Mixtral-8x7b)
@@ -481,12 +454,9 @@ with tab3:
         - 252 with secrets
         - 3,000+ facts
         - Real-time AI
-
         **👩‍💻 Built By:**
-
         **Rima Alaya**
         AI/ML Engineer
-
         [GitHub](https://github.com/RimaAlaya) | [LinkedIn](https://linkedin.com/in/rima-alaya)
         """)
 
