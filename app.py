@@ -21,6 +21,19 @@ st.set_page_config(
 # GOSSIP THEME - Make it POP
 st.markdown("""
 <style>
+    /* 1. HIDE STREAMLIT BRANDING & DEPLOY BAR */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    [data-testid="stToolbar"] {display: none !important;}
+        /* 3. REMOVE EXTRA WHITESPACE (The "Blank Bars") */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+        max-width: 95% !important;
+    }
+    div[data-testid="stVerticalBlock"] { gap: 1rem; }
+
     /* Cinema gossip vibe */
     .stApp {
         background-color: #1a0000;
