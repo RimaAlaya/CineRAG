@@ -73,8 +73,7 @@ with st.sidebar:
     """)
 
 # Main content
-tab1, tab2, tab3 = st.tabs(["🔍 Ask Questions", "💡 Examples", "ℹ️ About"])
-
+tab1, tab2, tab3, tab4 = st.tabs(["🔍 Ask Questions", "💡 Examples", "📊 Metrics", "ℹ️ About"])
 # Tab 1: Main search
 with tab1:
     st.header("Ask Me Anything About Movies")
@@ -114,6 +113,42 @@ with tab1:
             ):
                 st.write(source['text'])
                 st.caption(f"Relevance: {source['relevance_score']:.3f}")
+
+# Add after showing the answer
+st.divider()
+
+# Feedback section
+st.markdown("### 📊 Was this answer helpful?")
+
+col1, col2, col3 = st.columns([1, 1, 3])
+
+with col1:
+    if st.button("👍 Yes, helpful", key=f"good_{result['query_id']}"):
+        rag.feedback.save_feedback(result['query_id'], rating=1)
+        st.success("Thanks! This helps us improve.")
+        st.rerun()
+
+with col2:
+    if st.button("👎 No, not helpful", key=f"bad_{result['query_id']}"):
+        st.session_state[f'show_feedback_{result["query_id"]}'] = True
+        st.rerun()
+
+# Show feedback form if user clicked thumbs down
+if st.session_state.get(f'show_feedback_{result["query_id"]}', False):
+    with st.form(key=f'feedback_form_{result["query_id"]}'):
+        feedback_text = st.text_area(
+            "What was wrong with this answer?",
+            placeholder="The answer was off-topic / Missing information / Wrong movie / Other..."
+        )
+
+        if st.form_submit_button("Submit Feedback"):
+            rag.feedback.save_feedback(result['query_id'], rating=0, feedback_text=feedback_text)
+            st.success("Thank you for your feedback! We'll use this to improve.")
+            del st.session_state[f'show_feedback_{result["query_id"]}']
+            st.rerun()
+
+# Show performance metrics
+st.caption(f"⚡ Query processed in {result['latency_ms']:.0f}ms")
 
 # Tab 2: Examples
 with tab2:
@@ -219,6 +254,103 @@ with tab3:
         
         *Made with passion for cinema and technology* 🎬
         """)
+
+with tab4:
+    st.header("📊 System Metrics & Performance")
+
+    from metrics_tracker import MetricsTracker
+
+    tracker = MetricsTracker()
+
+    # Time period selector
+    days = st.selectbox("Time Period", [1, 7, 30], index=1)
+
+    report = tracker.generate_report(days=days)
+
+    # Overview metrics
+    st.subheader("📈 Overview")
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric(
+            "Total Queries",
+            report['overview']['total_queries']
+        )
+    with col2:
+        st.metric(
+            "Satisfaction Rate",
+            f"{report['performance']['satisfaction_rate']:.1%}"
+        )
+    with col3:
+        st.metric(
+            "Avg Latency",
+            f"{report['performance']['latency']['avg_ms']:.0f}ms"
+        )
+    with col4:
+        st.metric(
+            "Estimated Cost",
+            f"${report['costs']['estimated_cost_usd']:.4f}"
+        )
+
+    st.divider()
+
+    # Performance details
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader("⚡ Latency Distribution")
+        latency_data = report['performance']['latency']
+        st.write(f"**P95:** {latency_data['p95_ms']:.0f}ms")
+        st.write(f"**P99:** {latency_data['p99_ms']:.0f}ms")
+        st.write(f"**Max:** {latency_data['max_ms']:.0f}ms")
+
+        # Simple latency chart (placeholder)
+        st.bar_chart({
+            'Average': [latency_data['avg_ms']],
+            'P95': [latency_data['p95_ms']],
+            'P99': [latency_data['p99_ms']]
+        })
+
+    with col2:
+        st.subheader("🎬 Query Types")
+        secrets = report['usage']['secrets_distribution']
+        st.write(f"**With Secrets:** {secrets['secrets_pct']:.1f}%")
+        st.write(f"**Basic Info:** {100 - secrets['secrets_pct']:.1f}%")
+
+        # Pie chart data
+        import plotly.graph_objects as go
+
+        fig = go.Figure(data=[go.Pie(
+            labels=['With Secrets', 'Basic Info'],
+            values=[secrets['with_secrets'], secrets['without_secrets']],
+            hole=.3
+        )])
+        st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
+
+    # Quality issues
+    st.subheader("⚠️ Quality Analysis")
+    failures = report['quality']
+
+    if failures['total_failures'] > 0:
+        st.warning(f"**{failures['total_failures']} queries** received negative feedback")
+
+        col1, col2 = st.columns([2, 1])
+
+        with col1:
+            st.write("**Failure Categories:**")
+            for category, count in failures['failure_categories'].items():
+                if count > 0:
+                    st.write(f"- {category.replace('_', ' ').title()}: {count}")
+
+        with col2:
+            st.write("**Action Items:**")
+            st.write("1. Review failed queries")
+            st.write("2. Improve prompts")
+            st.write("3. Add missing data")
+    else:
+        st.success("No negative feedback in this period!")
 
 # Footer
 st.divider()

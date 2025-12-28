@@ -14,7 +14,8 @@ from typing import List, Dict
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-
+from feedback_system import FeedbackSystem
+import time
 try:
     from langchain_groq import ChatGroq
     from langchain_core.prompts import PromptTemplate
@@ -44,6 +45,7 @@ class CinemaSecretsRAG:
         self.bm25 = None
         self.tokenized_chunks = []
         self.llm = None
+        self.feedback = FeedbackSystem()
 
         print("🎬 Initializing Cinema Secrets RAG with Groq...")
         self._load_chunks()
@@ -257,16 +259,10 @@ class CinemaSecretsRAG:
 
     def ask(self, query: str, top_k: int = 5, use_llm: bool = True) -> Dict:
         """
-        Main interface: search + generate answer
-
-        Args:
-            query: User question
-            top_k: Number of chunks to retrieve
-            use_llm: Whether to use LLM for generation
-
-        Returns:
-            Dict with answer and source chunks
+        Main interface with feedback tracking
         """
+        start_time = time.time()
+
         # Search for relevant chunks
         chunks = self.hybrid_search(query, top_k=top_k)
 
@@ -274,14 +270,36 @@ class CinemaSecretsRAG:
         if use_llm and self.llm:
             answer = self.generate_answer(query, chunks)
         else:
-            # Fallback: just return the most relevant chunk
             answer = chunks[0]['text'] if chunks else "Sorry, I couldn't find relevant information."
 
+        latency_ms = (time.time() - start_time) * 1000
+
+        # Prepare sources
+        sources = [{
+            'movie_title': c['movie_title'],
+            'chunk_type': c['chunk_type'],
+            'text': c['text'][:200] + '...',
+            'is_secret': c['is_secret']
+        } for c in chunks]
+
+        has_secrets = any(c['is_secret'] for c in chunks)
+
+        # Log to feedback system
+        query_id = self.feedback.log_query(
+            query=query,
+            answer=answer,
+            sources=sources,
+            has_secrets=has_secrets,
+            latency_ms=latency_ms
+        )
+
         return {
+            'query_id': query_id,
             'question': query,
             'answer': answer,
             'sources': chunks,
-            'has_secrets': any(c['is_secret'] for c in chunks)
+            'has_secrets': has_secrets,
+            'latency_ms': round(latency_ms, 2)
         }
 
     def get_statistics(self) -> Dict:
