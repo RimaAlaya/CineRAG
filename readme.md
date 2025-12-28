@@ -1,12 +1,4 @@
 
-title: CineRAG
-emoji: 🎬
-colorFrom: purple
-colorTo: pink
-sdk: streamlit
-sdk_version: "1.32.0"
-app_file: app.py
-pinned: false
 
 # 🎬CineRAG - Cinema Secrets Encyclopedia
 
@@ -16,7 +8,7 @@ pinned: false
 [![LangChain](https://img.shields.io/badge/LangChain-🦜-green.svg)](https://langchain.com)
 [![Groq](https://img.shields.io/badge/Groq-⚡-orange.svg)](https://groq.com)
 
-[🚀 Live Demo](#) | [📹 Video Demo](#) | [📊 Technical Details](#technical-details)
+[🚀 Live Demo](https://huggingface.co/spaces/RimaAlaya/CineRAG) | [📹 Video Demo](#) | [📊 Technical Details](#technical-details)
 
 ---
 
