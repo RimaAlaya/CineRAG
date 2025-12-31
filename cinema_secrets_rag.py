@@ -27,6 +27,7 @@ except ImportError:
     from langchain_groq import ChatGroq
     from langchain_core.prompts import PromptTemplate
     LANGCHAIN_AVAILABLE = True
+from ab_testing import ABTest, PROMPT_VARIANTS
 
 
 load_dotenv()
@@ -53,6 +54,7 @@ class CinemaSecretsRAG:
         self._build_faiss_index()
         self._build_bm25_index()
         self._initialize_llm()
+        self.ab_test = ABTest()
         print("✅ Cinema Secrets RAG ready!\n")
 
     def _load_chunks(self):
@@ -217,45 +219,58 @@ class CinemaSecretsRAG:
 
         return results
 
-    def generate_answer(self, query: str, context_chunks: List[Dict]) -> str:
-        """Generate answer using Groq LLM"""
-        if not self.llm:
-            # Fallback: return chunks without generation
-            return "\n\n".join([f"**{c['movie_title']}**: {c['text'][:300]}..." for c in context_chunks])
+    def generate_answer(self, query: str, context_chunks: List[Dict],
+                        experiment_name: str = None, variant: str = None) -> str:
+        """Generate answer with optional A/B testing"""
 
-        # Build context
+        if not self.llm:
+            return self._fallback_answer(context_chunks)
+
         context = "\n\n".join([
             f"[{c['movie_title']} - {c['chunk_type']}]\n{c['text']}"
             for c in context_chunks
         ])
 
-        # Create prompt
-        prompt_text = f"""You are a cinema encyclopedia with deep knowledge of movies, behind-the-scenes secrets, production stories, and insider trivia that true film fans love , but don't be too talkative be precise like u have some tea but in a brief way sometimes we dont need 3 sentences to answer short question .
+        # A/B Testing: Pick variant
+        if experiment_name:
+            if not variant:
+                variant = self.ab_test.assign_variant(experiment_name)
 
-    Context (movie information and secrets):
-    {context}
+            # Get experiment config
+            if variant == 'A':
+                template = PROMPT_VARIANTS['gossip_girl']
+            else:
+                template = PROMPT_VARIANTS['documentary']
+        else:
+            # Default behavior (your current prompt)
+            is_secrets_query = any(word in query.lower() for word in ['secret', 'behind', 'scene'])
+            if is_secrets_query:
+                template = """You're sharing insider cinema knowledge. Be brief and exciting.
 
-    Question: {query}
+    Context: {context}
+    Question: {question}
 
-    Answer the question using the context provided. If the context contains behind-the-scenes secrets, production stories, or interesting trivia, include those details to make your answer fascinating for cinema enthusiasts. Be conversational and engaging, like you're sharing insider knowledge with a fellow movie lover.
+    Answer (under 150 words):"""
+            else:
+                template = """Answer directly and precisely.
 
-    If you don't find relevant information in the context, say so honestly.
-    - Keep it under 150 words total
-    - Lead with the juiciest detail
-    - Use short, punchy sentences
-    - Drop facts, not fluff
-    - If multiple movies, do bullet points
-    - Sound like you're spilling tea, not writing an essay
+    Context: {context}
+    Question: {question}
 
+    Answer (2-3 sentences):"""
 
-    Answer:"""
+        # Generate
+        from langchain.prompts import PromptTemplate
+        from langchain.chains import LLMChain
+
+        prompt = PromptTemplate(template=template, input_variables=["context", "question"])
+        chain = LLMChain(llm=self.llm, prompt=prompt)
 
         try:
-            response = self.llm.invoke(prompt_text)
-            return response.content
+            response = chain.run(context=context, question=query)
+            return response.strip()
         except Exception as e:
-            print(f"⚠️  Error generating answer: {e}")
-            return "\n\n".join([f"**{c['movie_title']}**: {c['text'][:300]}..." for c in context_chunks])
+            return self._fallback_answer(context_chunks)
 
     def ask(self, query: str, top_k: int = 5, use_llm: bool = True) -> Dict:
         """
